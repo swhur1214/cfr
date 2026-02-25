@@ -37,17 +37,69 @@ def build_bottom_up_order(J, K, A, S, rho):
     return order
 
 
+def build_parent_sequences(J, K, A, S, rho):
+    J = list(J)
+    K = list(K)
+    J_set = set(J)
+    K_set = set(K)
+    predecessors = {node: [] for node in J + K}
+
+    for j in J:
+        for action in A[j]:
+            child = _next_node(rho, j, action)
+            if child in predecessors:
+                predecessors[child].append((j, action))
+
+    for k in K:
+        for signal in S[k]:
+            child = _next_node(rho, k, signal)
+            if child in predecessors:
+                predecessors[child].append((k, signal))
+
+    sequence_by_node = {}
+    visiting = set()
+
+    def resolve(node):
+        if node in sequence_by_node:
+            return sequence_by_node[node]
+        if node in visiting:
+            raise ValueError("Cycle detected while constructing parent sequences.")
+        visiting.add(node)
+
+        candidates = set()
+        for parent, label in predecessors[node]:
+            if parent in J_set:
+                candidates.add((parent, label))
+            elif parent in K_set:
+                candidates.add(resolve(parent))
+
+        if not candidates:
+            sequence = None
+        elif len(candidates) == 1:
+            sequence = next(iter(candidates))
+        else:
+            raise ValueError(
+                f"Node {node!r} has multiple parent sequences: {candidates!r}"
+            )
+
+        visiting.remove(node)
+        sequence_by_node[node] = sequence
+        return sequence
+
+    return {j: resolve(j) for j in J}
+
+
 class CounterfactualRegretMinimizer:
     """
     CFR implementation with basic components:
-    J, A, K, S, p, rho.
+    J, A, K, S, rho.
 
     - J: decision points in top-down order
     - A[j]: actions at decision point j
     - K: observation nodes
     - S[k]: signals at observation node k
-    - p[j]: parent sequence of decision point j (or None)
     - rho(node, label): next node after action/signal
+    - p[j]: derived parent sequence of decision point j (or None)
     """
 
     def __init__(
@@ -56,7 +108,6 @@ class CounterfactualRegretMinimizer:
         K,
         A,
         S,
-        p,
         rho,
         plus=False,
     ):
@@ -64,8 +115,14 @@ class CounterfactualRegretMinimizer:
         self.K = list(K)
         self.A = A
         self.S = S
-        self.p = p
         self.rho = rho
+        self.p = build_parent_sequences(
+            self.J,
+            self.K,
+            self.A,
+            self.S,
+            self.rho,
+        )
 
         self._J_set = set(self.J)
         self._K_set = set(self.K)
