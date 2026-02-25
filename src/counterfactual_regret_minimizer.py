@@ -3,12 +3,6 @@ import numpy as np
 from regret_minimizer import RegretMinimizer
 
 
-def _next_node(rho, node, label):
-    if callable(rho):
-        return rho(node, label)
-    return rho[(node, label)]
-
-
 def build_bottom_up_order(J, K, A, S, rho):
     J_set = set(J)
     K_set = set(K)
@@ -17,9 +11,9 @@ def build_bottom_up_order(J, K, A, S, rho):
 
     def children(node):
         if node in J_set:
-            return [_next_node(rho, node, action) for action in A[node]]
+            return [rho[(node, action)] for action in A[node]]
         if node in K_set:
-            return [_next_node(rho, node, signal) for signal in S[node]]
+            return [rho[(node, signal)] for signal in S[node]]
         return []
 
     def dfs(node):
@@ -46,13 +40,13 @@ def build_parent_sequences(J, K, A, S, rho):
 
     for j in J:
         for action in A[j]:
-            child = _next_node(rho, j, action)
+            child = rho[(j, action)]
             if child in predecessors:
                 predecessors[child].append((j, action))
 
     for k in K:
         for signal in S[k]:
-            child = _next_node(rho, k, signal)
+            child = rho[(k, signal)]
             if child in predecessors:
                 predecessors[child].append((k, signal))
 
@@ -98,7 +92,7 @@ class CounterfactualRegretMinimizer:
     - A[j]: actions at decision point j
     - K: observation nodes
     - S[k]: signals at observation node k
-    - rho(node, label): next node after action/signal
+    - rho[(node, label)]: next node after action/signal
     - p[j]: derived parent sequence of decision point j (or None)
     """
 
@@ -142,9 +136,6 @@ class CounterfactualRegretMinimizer:
         self.local_strategy = {}
         self.sequence_strategy = {}
 
-    def _next_node(self, node, label):
-        return _next_node(self.rho, node, label)
-
     def next_strategy(self):
         # Step 1: b_j^t <- R_j.NextStrategy()
         self.local_strategy = {}
@@ -174,7 +165,7 @@ class CounterfactualRegretMinimizer:
                 j = node
                 V[j] = 0.0
                 for i, action in enumerate(self.A[j]):
-                    child = self._next_node(j, action)
+                    child = self.rho[(j, action)]
                     V[j] += self.local_strategy[j][i] * (
                         u[(j, action)] + V.get(child, 0.0)
                     )
@@ -182,13 +173,13 @@ class CounterfactualRegretMinimizer:
                 k = node
                 V[k] = 0.0
                 for signal in self.S[k]:
-                    child = self._next_node(k, signal)
+                    child = self.rho[(k, signal)]
                     V[k] += V.get(child, 0.0)
 
         # Step 2: build l_j^t and update each R_j
         for j in self.J:
             local_utility = np.zeros(len(self.A[j]))
             for i, action in enumerate(self.A[j]):
-                child = self._next_node(j, action)
+                child = self.rho[(j, action)]
                 local_utility[i] = u[(j, action)] + V.get(child, 0.0)
             self.regret_minimizers[j].observe_utility(local_utility)
