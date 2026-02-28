@@ -1,3 +1,8 @@
+import numpy as np
+
+from regret_minimizer import RegretMinimizer
+from ... import efg_to_tfsdp
+
 
 class CounterFactualRegretMinimizer:
     def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
@@ -20,15 +25,16 @@ class CounterFactualRegretMinimizer:
         - p[j]: Parent sequence of decision point
             e.g., p["K|check-bet"] = ("K", "check")
         """
-        pass
+        self.last_strategy = ...
+        self.total_strategy = ...
 
     def next_strategy(self) -> np.ndarray:
-        """Return current strategy x \in R^{|\Sigma|}."""
+        """Return current strategy x \in R^{|\Sigma|}. Note: using sequence-form representation instead of behavioral strategy."""
         return x
 
     def observe_utility(self, l: np.ndarray):
         """Observe utility l \in R^{|\Sigma|}."""
-        pass
+        return
 
     def average_strategy(self) -> np.ndarray:
         """Compute the average strategy \bar x \in R^{|\Sigma|}. Only called at the end of training."""
@@ -37,15 +43,45 @@ class CounterFactualRegretMinimizer:
 
 class CounterFactualRegretMinimizerTrainer:
     """
-    CFR trainer for 2-player zero-sum games.
+    CFR trainer for 2-player zero-sum extensive_form_games.
     CFR object for each player.
     """
 
-    def __init__(self, game):
-        ...
-        self.cfr0 = CounterFactualRegretMinimizer(...)
-        self.cfr1 = CounterFactualRegretMinimizer(...)
-        ...
+    def __init__(self, efg: dict):
+        """
+        efg: extensive-form game in EFG format.
+        e.g., efg = {
+                "root": {
+                    "type": "CHANCE",
+                    "outcomes": [("KQ", "KQ", 1/6), ...], # (action, next_node, probability)
+                },
+                "KQ": {
+                    "type": "DECISION",
+                    "player": 0,
+                    "information_set": "K",
+                    "actions": [("check", "KQ|check"), ("bet", "KQ|bet")],
+                },
+                ...
+                "KQ|check-bet-call": {
+                    "type": "TERMINAL",
+                    "utility": {0: 2, 1: -2}
+                }
+            }
+        """
+        self.efg = efg
+        self.tfsdp0, self.tfsdp1 = efg_to_tfsdp(efg)
+        self.cfr0 = CounterFactualRegretMinimizer(**self.tfsdp0)
+        self.cfr1 = CounterFactualRegretMinimizer(**self.tfsdp1)
+        
+
+    def compute_utility(self, x0: np.ndarray, x1: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Use EFG to compute utility for each player given their strategies.
+        Return utility l0, l1 \in R^{|\Sigma|}.
+        """
+        l0 = ...
+        l1 = ...
+        return l0, l1
 
     def train(self, T: int):
         for t in range(T):
