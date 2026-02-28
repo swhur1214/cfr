@@ -26,19 +26,35 @@ class CounterFactualRegretMinimizer:
             e.g., p["K|check-bet"] = ("K", "check")
         """
         self.regret_minimizers = {j: RegretMinimizer(len(A[j])) for j in J}
-        self.last_strategy = ...
-        self.total_strategy = ...
+        self.last_strategies = {}
+        self.total_strategy = {}
 
-    def next_strategy(self) -> np.ndarray:
-        """Return current strategy x \in R^{|\Sigma|}. Note: using sequence-form representation instead of behavioral strategy."""
+    def next_strategy(self) -> dict:
+        """
+        Return current strategy x \in R^{|\Sigma|}. 
+        x: Sigma -> [0, 1] (Note: using sequence-form representation instead of behavioral strategy.)
+        """
+        ...
+        x = ...
+
+        self.last_strategies = {} # this will be used in observe_utility
+
         return x
 
-    def observe_utility(self, l: np.ndarray):
-        """Observe utility l \in R^{|\Sigma|}."""
+    def observe_utility(self, l: dict):
+        """
+        Observe utility l \in R^{|\Sigma|}.
+        l: Sigma -> R
+        """
         return
 
-    def average_strategy(self) -> np.ndarray:
-        """Compute the average strategy \bar x \in R^{|\Sigma|}. Only called at the end of training."""
+    def average_strategy(self) -> dict:
+        """
+        Compute the average strategy \bar x \in R^{|\Sigma|}. 
+        x_bar: Sigma -> [0, 1] (Note: using sequence-form representation instead of behavioral strategy.)
+        Only called at the end of training.
+        """
+        
         return x_bar
 
 
@@ -75,10 +91,10 @@ class CounterFactualRegretMinimizerTrainer:
         self.cfr1 = CounterFactualRegretMinimizer(**self.tfsdp1)
         
 
-    def compute_utility(self, x0: np.ndarray, x1: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
         """
         Use EFG to compute utility for each player given their strategies.
-        Return utility l0, l1 \in R^{|\Sigma|}.
+        Return utility l0, l1.
         """
         l0 = ...
         l1 = ...
