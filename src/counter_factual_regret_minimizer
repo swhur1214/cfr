@@ -8,7 +8,7 @@ class CounterFactualRegretMinimizer:
     def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
         """
         CFR implementation with basic components:
-        J, A, K, S, rho.
+        J, A, K, S, rho, Sigma, p.
 
         - J: decision points in top-down order. 
             e.g., ["K", "K|check-bet", ...]
@@ -54,13 +54,13 @@ class CounterFactualRegretMinimizerTrainer:
         e.g., efg = {
                 "root": {
                     "type": "CHANCE",
-                    "outcomes": [("KQ", "KQ", 1/6), ...], # (action, next_node, probability)
+                    "outcomes": [("KQ", "KQ", 1/6), ...], # (outcome, next_node, probability)
                 },
                 "KQ": {
                     "type": "DECISION",
                     "player": 0,
                     "information_set": "K",
-                    "actions": [("check", "KQ|check"), ("bet", "KQ|bet")],
+                    "actions": [("check", "KQ|check"), ("bet", "KQ|bet")], # (action, next_node)
                 },
                 ...
                 "KQ|check-bet-call": {
