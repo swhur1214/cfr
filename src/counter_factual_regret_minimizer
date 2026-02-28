@@ -1,0 +1,64 @@
+
+class CounterFactualRegretMinimizer:
+    def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
+        """
+        CFR implementation with basic components:
+        J, A, K, S, rho.
+
+        - J: decision points in top-down order. 
+            e.g., ["K", "K|check-bet", ...]
+        - A[j]: actions at decision point j
+            e.g., A["K|check-bet"] = ["call", "fold"]
+        - K: observation nodes
+            e.g., ["", "K|check", "K|check-check", ...]
+        - S[k]: signals at observation node k
+            e.g., S["K|check-check"] = "J"
+        - rho[(j, a)] or rho[(k, s)]: next node after action/signal
+            e.g., rho[("K|check", "check")] = "K|check-check"
+        - Sigma: All sequences.
+            e.g., Sigma = [("K", "check"), ("K", "bet"), ...]
+        - p[j]: Parent sequence of decision point
+            e.g., p["K|check-bet"] = ("K", "check")
+        """
+        pass
+
+    def next_strategy(self) -> np.ndarray:
+        """Return current strategy x \in R^{|\Sigma|}."""
+        return x
+
+    def observe_utility(self, l: np.ndarray):
+        """Observe utility l \in R^{|\Sigma|}."""
+        pass
+
+    def average_strategy(self) -> np.ndarray:
+        """Compute the average strategy \bar x \in R^{|\Sigma|}. Only called at the end of training."""
+        return x_bar
+
+
+class CounterFactualRegretMinimizerTrainer:
+    """
+    CFR trainer for 2-player zero-sum games.
+    CFR object for each player.
+    """
+
+    def __init__(self, game):
+        ...
+        self.cfr0 = CounterFactualRegretMinimizer(...)
+        self.cfr1 = CounterFactualRegretMinimizer(...)
+        ...
+
+    def train(self, T: int):
+        for t in range(T):
+            x0 = self.cfr0.next_strategy()
+            x1 = self.cfr1.next_strategy()
+
+            l0, l1 = self.compute_utility(x0, x1)
+
+            self.cfr0.observe_utility(l0)
+            self.cfr1.observe_utility(l1)
+
+        x_bar_0 = self.cfr0.average_strategy()
+        x_bar_1 = self.cfr1.average_strategy()
+        return x_bar_0, x_bar_1
+    
+
