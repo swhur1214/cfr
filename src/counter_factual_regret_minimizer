@@ -25,6 +25,7 @@ class CounterFactualRegretMinimizer:
         - p[j]: Parent sequence of decision point
             e.g., p["K|check-bet"] = ("K", "check")
         """
+        self.regret_minimizers = {j: RegretMinimizer(len(A[j])) for j in J}
         self.last_strategy = ...
         self.total_strategy = ...
 
