@@ -17,6 +17,11 @@ class RegretMinimizer:
         self._last_strategy = np.full(n_actions, 1.0 / n_actions)
 
     def next_strategy(self) -> np.ndarray:
+        """Compute and return the next mixed strategy.
+
+        Returns:
+            np.ndarray: Probability vector over actions, shape (n_actions,).
+        """
         pos = np.maximum(self.regret, 0.0)
         s = pos.sum()
         self._last_strategy = (
@@ -25,9 +30,14 @@ class RegretMinimizer:
         self.strategy_sum += self._last_strategy
         return self._last_strategy
 
-    def observe_utility(self, action_utilities: np.ndarray) -> None:
-        expected = float(self._last_strategy @ action_utilities)
-        self.regret += action_utilities - expected
+    def observe_utility(self, l: np.ndarray) -> None:
+        """Update regrets from action utilities under the last strategy.
+
+        Args:
+            l: Linear utility vector for actions, shape (n_actions,).
+        """
+        expected = float(self._last_strategy @ l)
+        self.regret += l - expected
         if self.plus:
             self.regret = np.maximum(self.regret, 0.0)
 
