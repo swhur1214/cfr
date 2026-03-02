@@ -1,89 +1,117 @@
 import numpy as np
 
 from regret_minimizer import RegretMinimizer
+
 from ... import efg_to_tfsdp
 
 
 class CounterFactualRegretMinimizer:
     def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
+        """CFR implementation with basic components.
+        
+        Args:
+            J: Decision points in top-down order.
+                e.g., ["K", "K|check-bet", ...]
+            A[j]: Actions at decision point j.
+                e.g., A["K|check-bet"] = ["call", "fold"]
+            K: Observation nodes.
+                e.g., ["", "K|check", "K|check-check", ...]
+            S[k]: Signals at observation node k.
+                e.g., S["K|check-check"] = "J"
+            rho[(j, a)] or rho[(k, s)]: next node after action/signal.
+                e.g., rho[("K|check", "check")] = "K|check-check"
+            Sigma: A list of all sequences.
+                e.g., Sigma = [("K", "check"), ("K", "bet"), ...]
+            p[j]: Parent sequence of decision point.
+                e.g., p["K|check-bet"] = ("K", "check")
         """
-        CFR implementation with basic components:
-        J, A, K, S, rho, Sigma, p.
-
-        - J: decision points in top-down order. 
-            e.g., ["K", "K|check-bet", ...]
-        - A[j]: actions at decision point j
-            e.g., A["K|check-bet"] = ["call", "fold"]
-        - K: observation nodes
-            e.g., ["", "K|check", "K|check-check", ...]
-        - S[k]: signals at observation node k
-            e.g., S["K|check-check"] = "J"
-        - rho[(j, a)] or rho[(k, s)]: next node after action/signal
-            e.g., rho[("K|check", "check")] = "K|check-check"
-        - Sigma: All sequences.
-            e.g., Sigma = [("K", "check"), ("K", "bet"), ...]
-        - p[j]: Parent sequence of decision point
-            e.g., p["K|check-bet"] = ("K", "check")
-        """
-        self.regret_minimizers = {j: RegretMinimizer(len(A[j])) for j in J}
-        self.last_strategies = {}
-        self.total_strategy = {}
+        self._regret_minimizers = {j: RegretMinimizer(len(A[j])) for j in J}
+        self._local_strategies = {j: None for j in J}
 
     def next_strategy(self) -> dict:
-        """
-        Return current strategy x \in R^{|\Sigma|}. 
-        x: Sigma -> [0, 1] (Note: using sequence-form representation instead of behavioral strategy.)
-        """
-        ...
-        x = ...
+        """Return current strategy x. 
 
-        self.last_strategies = {} # this will be used in observe_utility
+        Returns:
+            x: Sigma -> [0, 1]
+                Note: using sequence-form representation instead of behavioral strategy.
+        """
+        local_strategies = {j: self._regret_minimizers[j].next_strategy() for j in self.J}
+        self._local_strategies = local_strategies # will be used in observe_utility
+
+        x = {sigma: 0.0 for sigma in self.Sigma}
+
+        for j in self.J:
+            parent = self.p[j]
+            parent_prob = 1.0 if parent is None else x[parent]
+            for idx, a in enumerate(self.A[j]):
+                x[(j, a)] = parent_prob * local_strategies[j][idx]
+
+        # TODO: cumulate strategy for average_strategy computation.
 
         return x
 
     def observe_utility(self, l: dict):
-        """
-        Observe utility l \in R^{|\Sigma|}.
-        l: Sigma -> R
-        """
-        return
+        """Observe utility l.
 
-    def average_strategy(self) -> dict:
+        Args:
+            l: Sigma -> R. Linear utility for each sequence.
         """
-        Compute the average strategy \bar x \in R^{|\Sigma|}. 
-        x_bar: Sigma -> [0, 1] (Note: using sequence-form representation instead of behavioral strategy.)
-        Only called at the end of training.
+        # TODO: Implement V computation
+        V = {}
+        for node in reversed(self.nodes):
+            if node in self.J:
+                # V[node] = 
+                pass
+            if node in self.K:
+                # V[node] = 
+                pass
+
+
+        for j in self.J:
+            l_j = np.zeros(len(self.A[j]))
+            for idx, a in enumerate(self.A[j]):
+                l_j[idx] = l[(j, a)] + V[self.rho[(j, a)]]
+            self._regret_minimizers[j].observe_utility(l_j)
+
+    def average_strategy(self, T: int) -> dict:
+        """Compute the average strategy x_bar. Only called at the end of training.
+
+        Returns:
+            x_bar: Sigma -> [0, 1]
+                Note: using sequence-form representation instead of behavioral strategy.
         """
+        # TODO: Implement 
         
         return x_bar
 
 
 class CounterFactualRegretMinimizerTrainer:
-    """
-    CFR trainer for 2-player zero-sum extensive_form_games.
-    CFR object for each player.
+    """CFRM trainer for 2-player zero-sum extensive_form_games.
+    One CFRM object for each player.
     """
 
     def __init__(self, efg: dict):
         """
-        efg: extensive-form game in EFG format.
-        e.g., efg = {
-                "root": {
-                    "type": "CHANCE",
-                    "outcomes": [("KQ", "KQ", 1/6), ...], # (outcome, next_node, probability)
-                },
-                "KQ": {
-                    "type": "DECISION",
-                    "player": 0,
-                    "information_set": "K",
-                    "actions": [("check", "KQ|check"), ("bet", "KQ|bet")], # (action, next_node)
-                },
-                ...
-                "KQ|check-bet-call": {
-                    "type": "TERMINAL",
-                    "utility": {0: 2, 1: -2}
-                }
-            }
+
+        Args:
+            efg: extensive-form game in EFG format.
+                e.g., {
+                        "root": {
+                            "type": "CHANCE",
+                            "outcomes": [("KQ", "KQ", 1/6), ...], # (outcome, next_node, probability)
+                        },
+                        "KQ": {
+                            "type": "DECISION",
+                            "player": 0,
+                            "information_set": "K",
+                            "actions": [("check", "KQ|check"), ("bet", "KQ|bet")], # (action, next_node)
+                        },
+                        ...
+                        "KQ|check-bet-call": {
+                            "type": "TERMINAL",
+                            "utility": {0: 2, 1: -2}
+                        }
+                    }
         """
         self.efg = efg
         self.tfsdp0, self.tfsdp1 = efg_to_tfsdp(efg)
@@ -94,13 +122,26 @@ class CounterFactualRegretMinimizerTrainer:
     def compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
         """
         Use EFG to compute utility for each player given their strategies.
-        Return utility l0, l1.
+
+        Args:
+            x0: Sigma -> [0, 1], strategy of player 0 in sequence-form representation.
+            x1: Sigma -> [0, 1], strategy of player 1 in sequence-form representation.
+
+        Returns:
+            l0: Sigma -> R, utility for player 0 for each sequence.
+            l1: Sigma -> R, utility for player 1 for each sequence.
         """
-        l0 = ...
-        l1 = ...
+
+        
         return l0, l1
 
     def train(self, T: int):
+        """Train CFRM for T iterations and return the average strategy.
+        
+        Returns:
+            x_bar_0: Sigma -> [0, 1], average strategy of player 0. (sequence-form representation)
+            x_bar_1: Sigma -> [0, 1], average strategy of player 1. (sequence-form representation)
+        """
         for t in range(T):
             x0 = self.cfr0.next_strategy()
             x1 = self.cfr1.next_strategy()
@@ -114,4 +155,3 @@ class CounterFactualRegretMinimizerTrainer:
         x_bar_1 = self.cfr1.average_strategy()
         return x_bar_0, x_bar_1
     
-
