@@ -1,7 +1,9 @@
 import numpy as np
 
 
-class RegretMinimizer:
+class RegretMatching:
+    """Regret Matching (RM / RM+) for a finite action set."""
+
     def __init__(
         self,
         n_actions: int,
@@ -43,3 +45,7 @@ class RegretMinimizer:
 
     def average_strategy(self) -> np.ndarray:
         return self.strategy_sum / self.strategy_sum.sum()
+
+
+# Backward compatibility for existing imports/usages.
+RegretMinimizer = RegretMatching

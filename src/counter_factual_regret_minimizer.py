@@ -1,11 +1,11 @@
 import numpy as np
 
-from regret_minimizer import RegretMinimizer
+from regret_minimizer import RegretMatching
 
 from ... import efg_to_tfsdp
 
 
-class CounterFactualRegretMinimizer:
+class CounterFactualRegret:
     def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
         """CFR implementation with basic components.
         
@@ -25,7 +25,7 @@ class CounterFactualRegretMinimizer:
             p[j]: Parent sequence of decision point.
                 e.g., p["K|check-bet"] = ("K", "check")
         """
-        self._regret_minimizers = {j: RegretMinimizer(len(A[j])) for j in J}
+        self._regret_minimizers = {j: RegretMatching(len(A[j])) for j in J}
         self._local_strategies = {j: None for j in J}
 
     def next_strategy(self) -> dict:
@@ -85,7 +85,7 @@ class CounterFactualRegretMinimizer:
         return x_bar
 
 
-class CounterFactualRegretMinimizerTrainer:
+class CounterFactualRegretTrainer:
     """CFRM trainer for 2-player zero-sum extensive_form_games.
     One CFRM object for each player.
     """
@@ -96,7 +96,7 @@ class CounterFactualRegretMinimizerTrainer:
         Args:
             efg: extensive-form game in EFG format.
                 e.g., {
-                        "root": {
+                        "": {
                             "type": "CHANCE",
                             "outcomes": [("KQ", "KQ", 1/6), ...], # (outcome, next_node, probability)
                         },
@@ -109,14 +109,14 @@ class CounterFactualRegretMinimizerTrainer:
                         ...
                         "KQ|check-bet-call": {
                             "type": "TERMINAL",
-                            "utility": {0: 2, 1: -2}
+                            "utility": [2, -2], # utility for player 0 and player 1
                         }
                     }
         """
         self.efg = efg
         self.tfsdp0, self.tfsdp1 = efg_to_tfsdp(efg)
-        self.cfr0 = CounterFactualRegretMinimizer(**self.tfsdp0)
-        self.cfr1 = CounterFactualRegretMinimizer(**self.tfsdp1)
+        self.cfr0 = CounterFactualRegret(**self.tfsdp0)
+        self.cfr1 = CounterFactualRegret(**self.tfsdp1)
         
 
     def compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
@@ -154,4 +154,9 @@ class CounterFactualRegretMinimizerTrainer:
         x_bar_0 = self.cfr0.average_strategy()
         x_bar_1 = self.cfr1.average_strategy()
         return x_bar_0, x_bar_1
+
+
+# Backward compatibility for existing imports/usages.
+CounterFactualRegretMinimizer = CounterFactualRegret
+CounterFactualRegretMinimizerTrainer = CounterFactualRegretTrainer
     
