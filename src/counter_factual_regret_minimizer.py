@@ -46,8 +46,6 @@ class CounterFactualRegret:
             for idx, a in enumerate(self.A[j]):
                 x[(j, a)] = parent_prob * local_strategies[j][idx]
 
-        # TODO: cumulate strategy for average_strategy computation.
-
         return x
 
     def observe_utility(self, l: dict):
@@ -90,7 +88,7 @@ class CounterFactualRegretTrainer:
     One CFRM object for each player.
     """
 
-    def __init__(self, efg: dict):
+    def __init__(self, efg: dict, tfsdp0: dict, tfsdp1: dict):
         """
 
         Args:
@@ -114,7 +112,8 @@ class CounterFactualRegretTrainer:
                     }
         """
         self.efg = efg
-        self.tfsdp0, self.tfsdp1 = efg_to_tfsdp(efg)
+        self.tfsdp0 = tfsdp0
+        self.tfsdp1 = tfsdp1
         self.cfr0 = CounterFactualRegret(**self.tfsdp0)
         self.cfr1 = CounterFactualRegret(**self.tfsdp1)
         
@@ -131,7 +130,7 @@ class CounterFactualRegretTrainer:
             l0: Sigma -> R, utility for player 0 for each sequence.
             l1: Sigma -> R, utility for player 1 for each sequence.
         """
-
+        
         
         return l0, l1
 
