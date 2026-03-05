@@ -1,6 +1,6 @@
 import numpy as np
 
-from regret_minimizer import RegretMatching
+from regret_matching import RegretMatching
 
 
 class CounterFactualRegret:
@@ -23,8 +23,8 @@ class CounterFactualRegret:
             p[j]: Parent sequence of decision point.
                 e.g., p["K|check-bet"] = ("K", "check")
         """
-        self._regret_minimizers = {j: RegretMatching(len(A[j])) for j in J}
-        self._local_strategies = {j: None for j in J}
+        self._rms = {j: RegretMatching(len(A[j])) for j in J}
+        self._local_strats = {j: None for j in J}
 
     def next_strategy(self) -> dict:
         """Return current strategy x. 
@@ -33,8 +33,8 @@ class CounterFactualRegret:
             x: Sigma -> [0, 1]
                 Note: using sequence-form representation instead of behavioral strategy.
         """
-        local_strategies = {j: self._regret_minimizers[j].next_strategy() for j in self.J}
-        self._local_strategies = local_strategies # will be used in observe_utility
+        local_strats = {j: self._rms[j].next_strategy() for j in self.J}
+        self._local_strats = local_strats # will be used in observe_utility
 
         x = {sigma: 0.0 for sigma in self.Sigma}
 
@@ -42,7 +42,7 @@ class CounterFactualRegret:
             parent = self.p[j]
             parent_prob = 1.0 if parent is None else x[parent]
             for idx, a in enumerate(self.A[j]):
-                x[(j, a)] = parent_prob * local_strategies[j][idx]
+                x[(j, a)] = parent_prob * local_strats[j][idx]
 
         return x
 
@@ -67,7 +67,7 @@ class CounterFactualRegret:
             l_j = np.zeros(len(self.A[j]))
             for idx, a in enumerate(self.A[j]):
                 l_j[idx] = l[(j, a)] + V[self.rho[(j, a)]]
-            self._regret_minimizers[j].observe_utility(l_j)
+            self._rms[j].observe_utility(l_j)
 
     def average_strategy(self) -> dict:
         """Compute the average strategy x_bar. Only called at the end of training.
@@ -77,7 +77,7 @@ class CounterFactualRegret:
                 Note: using sequence-form representation instead of behavioral strategy.
         """
         local_average = {
-            j: self._regret_minimizers[j].average_strategy() for j in self.J
+            j: self._rms[j].average_strategy() for j in self.J
         }
         x_bar = {sigma: 0.0 for sigma in self.Sigma}
         for j in self.J:
