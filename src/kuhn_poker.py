@@ -1,12 +1,9 @@
-
-
-
 class KuhnPoker:
     """Implementation of Kuhn Poker game and its representations (EFG and TFSDP)."""
+
     CARDS = ("J", "Q", "K")
     RANK = {"J": 0, "Q": 1, "K": 2}
     DEALS = ["KQ", "QK", "JK", "KJ", "QJ", "JQ"]
-
 
     @staticmethod
     def showdown_utility(card0: str, card1: str, amount: int) -> list[int]:
@@ -14,8 +11,18 @@ class KuhnPoker:
         return [u0, -u0]
 
     @staticmethod
-    def kuhn_efg() -> dict:
-        """Build the extensive-form game representation of Kuhn Poker."""
+    def efg() -> dict:
+        """Return Kuhn Poker as an extensive-form game.
+
+        Returns:
+            efg: dict
+                Node map keyed by history strings such as `""`, `KQ`, or `KQ|check-bet`.
+                Node formats are:
+                `{"type": "CHANCE", "outcomes": [(outcome, next_node, prob), ...]}`
+                `{"type": "DECISION", "player": int, "information_set": str,
+                "actions": [(action, next_node), ...]}`
+                `{"type": "TERMINAL", "utility": [u0, u1]}`
+        """
         efg = {
             "": {
                 "type": "CHANCE",
@@ -25,14 +32,19 @@ class KuhnPoker:
 
         for deal in KuhnPoker.DEALS:
             card0, card1 = deal
-            efg[""]["outcomes"].append((deal, deal, 1 / 6))
+            efg[""]["outcomes"].append(
+                (deal, deal, 1 / 6)
+            )  # (outcome, next_node, probability)
 
             # Player 0 first action (check / bet)
             efg[deal] = {
                 "type": "DECISION",
                 "player": 0,
                 "information_set": card0,
-                "actions": [("check", f"{deal}|check"), ("bet", f"{deal}|bet")],
+                "actions": [
+                    ("check", f"{deal}|check"),
+                    ("bet", f"{deal}|bet"),
+                ],  # (action, next_node)
             }
 
             # After check, player 1 can check or bet
@@ -89,10 +101,24 @@ class KuhnPoker:
 
         return efg
 
-
     @staticmethod
-    def kuhn_tfsdp(player: int) -> dict:
-        """Build the Tree-form sequential decision process (TFSDP) representation of Kuhn Poker for the given player."""
+    def tfsdp(player: int) -> dict:
+        """Return the player's TFSDP representation.
+
+        Args:
+            player: Player index (`0` or `1`).
+
+        Returns:
+            tfsdp: dict
+                Mapping with TFSDP components:
+                J: decision points.
+                A: legal actions A_j for each j in J.
+                K: observation points.
+                S: possible signals S_k for each k in K.
+                rho: transition map from (j, a) or (k, s) to the next point.
+                Sigma: set of sequences (j, a).
+                p: parent sequence p_j of each decision point j.
+        """
         if player == 0:
             J = [*KuhnPoker.CARDS, *[f"{c}|check-bet" for c in KuhnPoker.CARDS]]
             A = {c: ["check", "bet"] for c in KuhnPoker.CARDS}
@@ -117,7 +143,9 @@ class KuhnPoker:
                 rho[(f"{c}|check-bet", "fold")] = "T"
 
         else:
-            J = [f"{c}|check" for c in KuhnPoker.CARDS] + [f"{c}|bet" for c in KuhnPoker.CARDS]
+            J = [f"{c}|check" for c in KuhnPoker.CARDS] + [
+                f"{c}|bet" for c in KuhnPoker.CARDS
+            ]
             A = {f"{c}|check": ["check", "bet"] for c in KuhnPoker.CARDS}
             A.update({f"{c}|bet": ["call", "fold"] for c in KuhnPoker.CARDS})
             p = {j: None for j in J}

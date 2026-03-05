@@ -4,44 +4,41 @@ from regret_matching import RegretMatching
 
 
 class CounterFactualRegret:
-    def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
-        """CFR implementation with basic components.
-        
+    def __init__(self, tfsdp: dict):
+        """Initialize CFR from a TFSDP description.
+
         Args:
-            J: Decision points in top-down order.
-                e.g., ["K", "K|check-bet", ...]
-            A[j]: Actions at decision point j.
-                e.g., A["K|check-bet"] = ["call", "fold"]
-            K: Observation nodes.
-                e.g., ["", "K|check", "K|check-check", ...]
-            S[k]: Signals at observation node k.
-                e.g., S["K|check-check"] = "J"
-            rho[(j, a)] or rho[(k, s)]: next node after action/signal.
-                e.g., rho[("K|check", "check")] = "K|check-check"
-            Sigma: A list of all sequences.
-                e.g., Sigma = [("K", "check"), ("K", "bet"), ...]
-            p[j]: Parent sequence of decision point.
-                e.g., p["K|check-bet"] = ("K", "check")
+            tfsdp: 
         """
-        self._rms = {j: RegretMatching(len(A[j])) for j in J}
-        self._local_strats = {j: None for j in J}
+        self._J = tfsdp["J"]
+        self._A = tfsdp["A"]
+        self._K = tfsdp["K"]
+        self._S = tfsdp["S"]
+        self._rho = tfsdp["rho"]
+        self._Sigma = tfsdp["Sigma"]
+        self._p = tfsdp["p"]
+
+        # TODO: top-down traversal order of J + K.
+        # self._nodes = 
+
+        self._rms = {j: RegretMatching(len(self._A[j])) for j in self._J}
+        self._local_strats = {j: None for j in self._J}
 
     def next_strategy(self) -> dict:
         """Return current strategy x. 
 
         Returns:
-            x: Sigma -> [0, 1]
-                Note: using sequence-form representation instead of behavioral strategy.
+            x: Sigma -> [0, 1] ('sequence-form' representation)
         """
-        local_strats = {j: self._rms[j].next_strategy() for j in self.J}
+        local_strats = {j: self._rms[j].next_strategy() for j in self._J}
         self._local_strats = local_strats # will be used in observe_utility
 
-        x = {sigma: 0.0 for sigma in self.Sigma}
+        x = {sigma: 0.0 for sigma in self._Sigma}
 
-        for j in self.J:
-            parent = self.p[j]
+        for j in self._J:
+            parent = self._p[j]
             parent_prob = 1.0 if parent is None else x[parent]
-            for idx, a in enumerate(self.A[j]):
+            for idx, a in enumerate(self._A[j]):
                 x[(j, a)] = parent_prob * local_strats[j][idx]
 
         return x
@@ -53,37 +50,37 @@ class CounterFactualRegret:
             l: Sigma -> R. Linear utility for each sequence.
         """
         # TODO: Implement V computation
-        V = {}
+        # Note that V has a non-zero value only at non-terminal nodes.
+        # So we can just store V in l.
         for node in reversed(self.nodes):
-            if node in self.J:
-                # V[node] = 
+            if node in self._J:
+                # l[node] = 
                 pass
-            if node in self.K:
-                # V[node] = 
+            if node in self._K:
+                # l[node] = 
                 pass
 
 
-        for j in self.J:
-            l_j = np.zeros(len(self.A[j]))
-            for idx, a in enumerate(self.A[j]):
-                l_j[idx] = l[(j, a)] + V[self.rho[(j, a)]]
+        for j in self._J:
+            l_j = np.zeros(len(self._A[j]))
+            for idx, a in enumerate(self._A[j]):
+                l_j[idx] = l[(j, a)] + V[self._rho[(j, a)]]
             self._rms[j].observe_utility(l_j)
 
     def average_strategy(self) -> dict:
         """Compute the average strategy x_bar. Only called at the end of training.
 
         Returns:
-            x_bar: Sigma -> [0, 1]
-                Note: using sequence-form representation instead of behavioral strategy.
+            x_bar: Sigma -> [0, 1] ('sequence-form' representation)
         """
         local_average = {
-            j: self._rms[j].average_strategy() for j in self.J
+            j: self._rms[j].average_strategy() for j in self._J
         }
-        x_bar = {sigma: 0.0 for sigma in self.Sigma}
-        for j in self.J:
-            parent = self.p[j]
+        x_bar = {sigma: 0.0 for sigma in self._Sigma}
+        for j in self._J:
+            parent = self._p[j]
             parent_prob = 1.0 if parent is None else x_bar[parent]
-            for idx, a in enumerate(self.A[j]):
+            for idx, a in enumerate(self._A[j]):
                 x_bar[(j, a)] = parent_prob * local_average[j][idx]
 
         return x_bar
@@ -137,15 +134,17 @@ class CounterFactualRegretTrainer:
             l1: Sigma -> R, utility for player 1 for each sequence.
         """
         
-        
+        # TODO: Implement utility computation using EFG and strategies x0, x1.
+        # Note that the utility has a non-zero value only at terminal nodes.
+        # i.e. (j, a) such that rho[(j, a)] = "T". 
         return l0, l1
 
     def train(self, T: int):
         """Train CFRM for T iterations and return the average strategy.
         
         Returns:
-            x_bar_0: Sigma -> [0, 1], average strategy of player 0. (sequence-form representation)
-            x_bar_1: Sigma -> [0, 1], average strategy of player 1. (sequence-form representation)
+            x_bar_0: Sigma -> [0, 1], final trained strategy of player 0. ('sequence-form' representation)
+            x_bar_1: Sigma -> [0, 1], final trained strategy of player 1. ('sequence-form' representation)
         """
         for t in range(T):
             x0 = self.cfr0.next_strategy()
@@ -160,8 +159,3 @@ class CounterFactualRegretTrainer:
         x_bar_1 = self.cfr1.average_strategy()
         return x_bar_0, x_bar_1
 
-
-# Backward compatibility for existing imports/usages.
-CounterFactualRegretMinimizer = CounterFactualRegret
-CounterFactualRegretMinimizerTrainer = CounterFactualRegretTrainer
-    

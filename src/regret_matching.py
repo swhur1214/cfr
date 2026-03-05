@@ -22,7 +22,8 @@ class RegretMatching:
         """Compute and return the next strategy.
 
         Returns:
-            np.ndarray: Probability vector over actions, shape (n_actions,).
+            next_strategy: np.ndarray(n_actions,)
+                Probability vector over actions.
         """
         pos = np.maximum(self._regret, 0.0)
         s = pos.sum()
@@ -37,7 +38,8 @@ class RegretMatching:
         """Update regrets from action utilities under the last strategy.
 
         Args:
-            l: Linear utility vector for actions, shape (n_actions,).
+            l: np.ndarray(n_actions,)
+                Linear utility vector for actions.
         """
         expected = float(self._last_strategy @ l)
         self._regret += l - expected
