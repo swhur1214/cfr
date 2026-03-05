@@ -2,8 +2,6 @@ import numpy as np
 
 from regret_minimizer import RegretMatching
 
-from ... import efg_to_tfsdp
-
 
 class CounterFactualRegret:
     def __init__(self, J: list, A: dict, K: list, S: dict, rho: dict, Sigma: list, p: dict):
@@ -71,15 +69,23 @@ class CounterFactualRegret:
                 l_j[idx] = l[(j, a)] + V[self.rho[(j, a)]]
             self._regret_minimizers[j].observe_utility(l_j)
 
-    def average_strategy(self, T: int) -> dict:
+    def average_strategy(self) -> dict:
         """Compute the average strategy x_bar. Only called at the end of training.
 
         Returns:
             x_bar: Sigma -> [0, 1]
                 Note: using sequence-form representation instead of behavioral strategy.
         """
-        # TODO: Implement 
-        
+        local_average = {
+            j: self._regret_minimizers[j].average_strategy() for j in self.J
+        }
+        x_bar = {sigma: 0.0 for sigma in self.Sigma}
+        for j in self.J:
+            parent = self.p[j]
+            parent_prob = 1.0 if parent is None else x_bar[parent]
+            for idx, a in enumerate(self.A[j]):
+                x_bar[(j, a)] = parent_prob * local_average[j][idx]
+
         return x_bar
 
 
