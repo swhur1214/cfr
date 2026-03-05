@@ -2,7 +2,7 @@
 
 
 class KuhnPoker:
-    """"""
+    """Implementation of Kuhn Poker game and its representations (EFG and TFSDP)."""
     CARDS = ("J", "Q", "K")
     RANK = {"J": 0, "Q": 1, "K": 2}
     DEALS = ["KQ", "QK", "JK", "KJ", "QJ", "JQ"]
@@ -10,7 +10,7 @@ class KuhnPoker:
 
     @staticmethod
     def showdown_utility(card0: str, card1: str, amount: int) -> list[int]:
-        u0 = amount if RANK[card0] > RANK[card1] else -amount
+        u0 = amount if KuhnPoker.RANK[card0] > KuhnPoker.RANK[card1] else -amount
         return [u0, -u0]
 
     @staticmethod
@@ -23,7 +23,7 @@ class KuhnPoker:
             }
         }
 
-        for deal in DEALS:
+        for deal in KuhnPoker.DEALS:
             card0, card1 = deal
             efg[""]["outcomes"].append((deal, deal, 1 / 6))
 
@@ -68,11 +68,11 @@ class KuhnPoker:
             # Terminal nodes
             efg[f"{deal}|check-check"] = {
                 "type": "TERMINAL",
-                "utility": showdown_utility(card0, card1, amount=1),
+                "utility": KuhnPoker.showdown_utility(card0, card1, amount=1),
             }
             efg[f"{deal}|check-bet-call"] = {
                 "type": "TERMINAL",
-                "utility": showdown_utility(card0, card1, amount=2),
+                "utility": KuhnPoker.showdown_utility(card0, card1, amount=2),
             }
             efg[f"{deal}|check-bet-fold"] = {
                 "type": "TERMINAL",
@@ -80,7 +80,7 @@ class KuhnPoker:
             }
             efg[f"{deal}|bet-call"] = {
                 "type": "TERMINAL",
-                "utility": showdown_utility(card0, card1, amount=2),
+                "utility": KuhnPoker.showdown_utility(card0, card1, amount=2),
             }
             efg[f"{deal}|bet-fold"] = {
                 "type": "TERMINAL",
@@ -94,20 +94,20 @@ class KuhnPoker:
     def kuhn_tfsdp(player: int) -> dict:
         """Build the Tree-form sequential decision process (TFSDP) representation of Kuhn Poker for the given player."""
         if player == 0:
-            J = [*CARDS, *[f"{c}|check-bet" for c in CARDS]]
-            A = {c: ["check", "bet"] for c in CARDS}
-            A.update({f"{c}|check-bet": ["call", "fold"] for c in CARDS})
-            p = {c: None for c in CARDS}
-            p.update({f"{c}|check-bet": (c, "check") for c in CARDS})
+            J = [*KuhnPoker.CARDS, *[f"{c}|check-bet" for c in KuhnPoker.CARDS]]
+            A = {c: ["check", "bet"] for c in KuhnPoker.CARDS}
+            A.update({f"{c}|check-bet": ["call", "fold"] for c in KuhnPoker.CARDS})
+            p = {c: None for c in KuhnPoker.CARDS}
+            p.update({f"{c}|check-bet": (c, "check") for c in KuhnPoker.CARDS})
 
-            K = ["", *[f"{c}|check" for c in CARDS]]
+            K = ["", *[f"{c}|check" for c in KuhnPoker.CARDS]]
             S = {
-                "": list(CARDS),
-                **{f"{c}|check": ["check", "bet"] for c in CARDS},
+                "": list(KuhnPoker.CARDS),
+                **{f"{c}|check": ["check", "bet"] for c in KuhnPoker.CARDS},
             }
 
             rho = {}
-            for c in CARDS:
+            for c in KuhnPoker.CARDS:
                 rho[("", c)] = c
                 rho[(c, "check")] = f"{c}|check"
                 rho[(c, "bet")] = "T"
@@ -117,19 +117,19 @@ class KuhnPoker:
                 rho[(f"{c}|check-bet", "fold")] = "T"
 
         else:
-            J = [f"{c}|check" for c in CARDS] + [f"{c}|bet" for c in CARDS]
-            A = {f"{c}|check": ["check", "bet"] for c in CARDS}
-            A.update({f"{c}|bet": ["call", "fold"] for c in CARDS})
+            J = [f"{c}|check" for c in KuhnPoker.CARDS] + [f"{c}|bet" for c in KuhnPoker.CARDS]
+            A = {f"{c}|check": ["check", "bet"] for c in KuhnPoker.CARDS}
+            A.update({f"{c}|bet": ["call", "fold"] for c in KuhnPoker.CARDS})
             p = {j: None for j in J}
 
-            K = ["", *CARDS]
+            K = ["", *KuhnPoker.CARDS]
             S = {
-                "": list(CARDS),
-                **{c: ["check", "bet"] for c in CARDS},
+                "": list(KuhnPoker.CARDS),
+                **{c: ["check", "bet"] for c in KuhnPoker.CARDS},
             }
 
             rho = {}
-            for c in CARDS:
+            for c in KuhnPoker.CARDS:
                 rho[("", c)] = c
                 rho[(c, "check")] = f"{c}|check"
                 rho[(c, "bet")] = f"{c}|bet"
