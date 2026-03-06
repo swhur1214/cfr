@@ -1,6 +1,11 @@
+from collections import deque
+
 import numpy as np
 
-from regret_matching import RegretMatching
+try:
+    from regret_matching import RegretMatching
+except ModuleNotFoundError:
+    from .regret_matching import RegretMatching
 
 
 class CounterFactualRegret:
@@ -8,7 +13,7 @@ class CounterFactualRegret:
         """Initialize CFR from a TFSDP description.
 
         Args:
-            tfsdp: 
+            tfsdp: dict
         """
         self._J = tfsdp["J"]
         self._A = tfsdp["A"]
@@ -18,11 +23,44 @@ class CounterFactualRegret:
         self._Sigma = tfsdp["Sigma"]
         self._p = tfsdp["p"]
 
-        # TODO: top-down traversal order of J + K.
-        # self._nodes = 
+        self._J_set = set(self._J)
+        self._K_set = set(self._K)
+        self._nodes = self._topological_order()
 
         self._rms = {j: RegretMatching(len(self._A[j])) for j in self._J}
         self._local_strats = {j: None for j in self._J}
+
+    def _topological_order(self) -> list:
+        """Return a stable topological order over the all nodes in J and K."""
+        nodes = [*self._K, *self._J]
+        indegree = {node: 0 for node in nodes}
+        children = {node: [] for node in nodes}
+
+        for k in self._K:
+            for s in self._S[k]:
+                child = self._rho[(k, s)]
+                if child in indegree:
+                    indegree[child] += 1
+                    children[k].append(child)
+
+        for j in self._J:
+            for a in self._A[j]:
+                child = self._rho[(j, a)]
+                if child in indegree:
+                    indegree[child] += 1
+                    children[j].append(child)
+
+        queue = deque(node for node in nodes if indegree[node] == 0)
+        order = []
+        while queue:
+            node = queue.popleft()
+            order.append(node)
+            for child in children[node]:
+                indegree[child] -= 1
+                if indegree[child] == 0:
+                    queue.append(child)
+
+        return order
 
     def next_strategy(self) -> dict:
         """Return current strategy x. 
@@ -49,17 +87,17 @@ class CounterFactualRegret:
         Args:
             l: Sigma -> R. Linear utility for each sequence.
         """
-        # TODO: Implement V computation
-        # Note that V has a non-zero value only at non-terminal nodes.
-        # So we can just store V in l.
+        V = {}
+        V["T"] = 0.0
         for node in reversed(self._nodes):
-            if node in self._J:
-                # l[node] = 
-                pass
-            if node in self._K:
-                # l[node] = 
-                pass
-
+            if node in self._J_set:
+                local = self._local_strats[node]
+                V[node] = sum(
+                    local[idx] * (l[(node, a)] + V[self._rho[(node, a)]])
+                    for idx, a in enumerate(self._A[node])
+                )
+            elif node in self._K_set:
+                V[node] = sum(V[self._rho[(node, s)]] for s in self._S[node])
 
         for j in self._J:
             l_j = np.zeros(len(self._A[j]))
@@ -108,7 +146,47 @@ class CounterFactualRegretTrainer:
 
         self._cfr0 = CounterFactualRegret(self._tfsdp0)
         self._cfr1 = CounterFactualRegret(self._tfsdp1)
-        
+
+    def _traverse_tree(
+        self,
+        node_id: str,
+        x0: dict,
+        x1: dict,
+        l0: dict,
+        l1: dict,
+        seq0=None,
+        seq1=None,
+        chance_prob: float = 1.0,
+    ) -> None:
+        """Traverse the EFG and accumulate sequence-form utilities."""
+        node = self._efg[node_id]
+        node_type = node["type"]
+
+        if node_type == "CHANCE":
+            for _, next_node, prob in node["outcomes"]:
+                self._traverse_tree(next_node, x0, x1, l0, l1, seq0, seq1, chance_prob * prob)
+            return
+
+        if node_type == "DECISION":
+            player = node["player"]
+            info_set = node["information_set"]
+            for action, next_node in node["actions"]:
+                next_seq = (info_set, action)
+                if player == 0:
+                    self._traverse_tree(next_node, x0, x1, l0, l1, next_seq, seq1, chance_prob)
+                else:
+                    self._traverse_tree(next_node, x0, x1, l0, l1, seq0, next_seq, chance_prob)
+            return
+
+        if node_type == "TERMINAL":
+            # accumulatte utility
+            if seq0 is not None:
+                opp_reach = 1.0 if seq1 is None else x1[seq1]
+                l0[seq0] += chance_prob * opp_reach * node["utility"][0]
+            if seq1 is not None:
+                opp_reach = 1.0 if seq0 is None else x0[seq0]
+                l1[seq1] += chance_prob * opp_reach * node["utility"][1]
+            return
 
     def _compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
         """
@@ -122,10 +200,9 @@ class CounterFactualRegretTrainer:
             l0: Sigma -> R, utility for player 0 for each sequence.
             l1: Sigma -> R, utility for player 1 for each sequence.
         """
-        
-        # TODO: Implement utility computation using EFG and strategies x0, x1.
-        # Note that the utility has a non-zero value only at terminal nodes.
-        # i.e. (j, a) such that rho[(j, a)] = "T". 
+        l0 = {sigma: 0.0 for sigma in self._tfsdp0["Sigma"]}
+        l1 = {sigma: 0.0 for sigma in self._tfsdp1["Sigma"]}
+        self._traverse_tree("", x0, x1, l0, l1)
         return l0, l1
 
     def train(self, T: int):
@@ -147,4 +224,3 @@ class CounterFactualRegretTrainer:
         x_bar_0 = self._cfr0.average_strategy()
         x_bar_1 = self._cfr1.average_strategy()
         return x_bar_0, x_bar_1
-
