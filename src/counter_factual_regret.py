@@ -1,11 +1,7 @@
-from collections import deque
-
 import numpy as np
 
-try:
-    from regret_matching import RegretMatching
-except ModuleNotFoundError:
-    from .regret_matching import RegretMatching
+from regret_matching import RegretMatching
+from util import get_nodes_top_down, linear_utility
 
 
 class CounterFactualRegret:
@@ -27,42 +23,10 @@ class CounterFactualRegret:
 
         self._J_set = set(self._J)
         self._K_set = set(self._K)
-        self._nodes = self._get_nodes_top_down()
+        self._nodes = get_nodes_top_down(tfsdp)
 
         self._rms = {j: RegretMatching(len(self._A[j]), plus=plus) for j in self._J}
         self._local_strats = {j: None for j in self._J}
-
-    def _get_nodes_top_down(self) -> list:
-        """Return all nodes in J and K in a top-down order."""
-        nodes = [*self._K, *self._J]
-        indegree = {node: 0 for node in nodes}
-        children = {node: [] for node in nodes}
-
-        for k in self._K:
-            for s in self._S[k]:
-                child = self._rho[(k, s)]
-                if child in indegree:
-                    indegree[child] += 1
-                    children[k].append(child)
-
-        for j in self._J:
-            for a in self._A[j]:
-                child = self._rho[(j, a)]
-                if child in indegree:
-                    indegree[child] += 1
-                    children[j].append(child)
-
-        queue = deque(node for node in nodes if indegree[node] == 0)
-        order = []
-        while queue:
-            node = queue.popleft()
-            order.append(node)
-            for child in children[node]:
-                indegree[child] -= 1
-                if indegree[child] == 0:
-                    queue.append(child)
-
-        return order
 
     def next_strategy(self) -> dict:
         """Return current strategy x.
@@ -152,53 +116,6 @@ class CounterFactualRegretTrainer:
         self._cfr0 = CounterFactualRegret(self._tfsdp0, plus)
         self._cfr1 = CounterFactualRegret(self._tfsdp1, plus)
 
-    def _traverse_tree(
-        self,
-        node_id: str,
-        x0: dict,
-        x1: dict,
-        l0: dict,
-        l1: dict,
-        seq0=None,
-        seq1=None,
-        chance_prob: float = 1.0,
-    ) -> None:
-        """Traverse the EFG and accumulate sequence-form utilities."""
-        node = self._efg[node_id]
-        node_type = node["type"]
-
-        if node_type == "CHANCE":
-            for _, next_node, prob in node["outcomes"]:
-                self._traverse_tree(
-                    next_node, x0, x1, l0, l1, seq0, seq1, chance_prob * prob
-                )
-            return
-
-        if node_type == "DECISION":
-            player = node["player"]
-            info_set = node["information_set"]
-            for action, next_node in node["actions"]:
-                next_seq = (info_set, action)
-                if player == 0:
-                    self._traverse_tree(
-                        next_node, x0, x1, l0, l1, next_seq, seq1, chance_prob
-                    )
-                else:
-                    self._traverse_tree(
-                        next_node, x0, x1, l0, l1, seq0, next_seq, chance_prob
-                    )
-            return
-
-        if node_type == "TERMINAL":
-            # accumulatte utility
-            if seq0 is not None:
-                opp_reach = 1.0 if seq1 is None else x1[seq1]
-                l0[seq0] += chance_prob * opp_reach * node["utility"][0]
-            if seq1 is not None:
-                opp_reach = 1.0 if seq0 is None else x0[seq0]
-                l1[seq1] += chance_prob * opp_reach * node["utility"][1]
-            return
-
     def _compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
         """
         Compute linear utility for each player given their strategies.
@@ -215,9 +132,8 @@ class CounterFactualRegretTrainer:
             l1: dict[sequence -> float]
                 linear utility for player 1 for each sequence.
         """
-        l0 = {sigma: 0.0 for sigma in self._tfsdp0["Sigma"]}
-        l1 = {sigma: 0.0 for sigma in self._tfsdp1["Sigma"]}
-        self._traverse_tree("", x0, x1, l0, l1)
+        l0 = linear_utility(self._efg, self._tfsdp0, player=0, opponent_x=x1)
+        l1 = linear_utility(self._efg, self._tfsdp1, player=1, opponent_x=x0)
         return l0, l1
 
     def step(self):
