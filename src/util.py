@@ -2,7 +2,7 @@ from collections import deque
 
 
 def get_nodes_top_down(tfsdp: dict) -> list:
-    """Return all TFSDP nodes in a top-down order."""
+    """Return all TFSDP nodes (K + J) in a top-down order."""
     nodes = [*tfsdp["K"], *tfsdp["J"]]
     indegree = {node: 0 for node in nodes}
     children = {node: [] for node in nodes}
@@ -208,3 +208,5 @@ def format_strategy(x: dict, tfsdp: dict, digits: int = 4) -> dict:
         }
         for info_set in tfsdp["J"]
     }
+
+# TODO: review this file.
