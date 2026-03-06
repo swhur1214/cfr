@@ -68,14 +68,13 @@ class CounterFactualRegret:
         """Return current strategy x.
 
         Returns:
-            x: dict[Sigma -> R]
+            x: dict[sequence -> [0, 1]]
                 current strategy for each sequence. (sequence-form)
         """
         local_strats = {j: self._rms[j].next_strategy() for j in self._J}
         self._local_strats = local_strats  # will be used in observe_utility
 
         x = {sigma: 0.0 for sigma in self._Sigma}
-
         for j in self._J:
             parent = self._p[j]
             parent_prob = 1.0 if parent is None else x[parent]
@@ -88,7 +87,8 @@ class CounterFactualRegret:
         """Observe utility l.
 
         Args:
-            l: Sigma -> R. Linear utility for each sequence.
+            l: dict[sequence -> float]
+                Linear utility for each sequence.
         """
         V = {}
         V["T"] = 0.0
@@ -112,10 +112,11 @@ class CounterFactualRegret:
         """Compute the average strategy x_bar. Only called at the end of training.
 
         Returns:
-            x_bar: dict[Sigma -> R]
+            x_bar: dict[sequence -> [0, 1]]
                 final average strategy for each sequence. (sequence-form)
         """
         local_average = {j: self._rms[j].average_strategy() for j in self._J}
+
         x_bar = {sigma: 0.0 for sigma in self._Sigma}
         for j in self._J:
             parent = self._p[j]
@@ -203,15 +204,15 @@ class CounterFactualRegretTrainer:
         Compute linear utility for each player given their strategies.
 
         Args:
-            x0: dict[Sigma -> [0, 1]]
+            x0: dict[sequence -> [0, 1]]
                 strategy of player 0. (sequence-form)
-            x1: dict[Sigma -> [0, 1]]
+            x1: dict[sequence -> [0, 1]]
                 strategy of player 1. (sequence-form)
 
         Returns:
-            l0: dict[Sigma -> R]
+            l0: dict[sequence -> float]
                 linear utility for player 0 for each sequence.
-            l1: dict[Sigma -> R]
+            l1: dict[sequence -> float]
                 linear utility for player 1 for each sequence.
         """
         l0 = {sigma: 0.0 for sigma in self._tfsdp0["Sigma"]}
@@ -219,28 +220,32 @@ class CounterFactualRegretTrainer:
         self._traverse_tree("", x0, x1, l0, l1)
         return l0, l1
 
-    def train(self, T: int):
-        """Train CFRM for T iterations and return the average strategy.
-
-        Args:
-            T: int
-                number of training iterations.
+    def step(self):
+        """One iteration of CFRM training.
 
         Returns:
-            x_bar_0: dict[Sigma -> R]
+            x_bar_0: dict[sequence -> [0, 1]]
                 final trained strategy of player 0. (sequence-form)
-            x_bar_1: dict[Sigma -> R]
+            x_bar_1: dict[sequence -> [0, 1]]
                 final trained strategy of player 1. (sequence-form)
         """
-        for t in range(T):
-            x0 = self._cfr0.next_strategy()
-            x1 = self._cfr1.next_strategy()
+        x0 = self._cfr0.next_strategy()
+        x1 = self._cfr1.next_strategy()
 
-            l0, l1 = self._compute_utility(x0, x1)
+        l0, l1 = self._compute_utility(x0, x1)
 
-            self._cfr0.observe_utility(l0)
-            self._cfr1.observe_utility(l1)
+        self._cfr0.observe_utility(l0)
+        self._cfr1.observe_utility(l1)
+    
+    def average_strategy(self) -> tuple[dict, dict]:
+        """Compute the average strategy for both players. Only called at the end of training.
 
+        Returns:
+            x_bar_0: dict[sequence -> [0, 1]]
+                final average strategy of player 0. (sequence-form)
+            x_bar_1: dict[sequence -> [0, 1]]
+                final average strategy of player 1. (sequence-form)
+        """
         x_bar_0 = self._cfr0.average_strategy()
         x_bar_1 = self._cfr1.average_strategy()
         return x_bar_0, x_bar_1
