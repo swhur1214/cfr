@@ -28,7 +28,7 @@ class CounterFactualRegret:
         """Return current strategy x. 
 
         Returns:
-            x: Sigma -> [0, 1] ('sequence-form' representation)
+            x: Sigma -> [0, 1] (sequence-form)
         """
         local_strats = {j: self._rms[j].next_strategy() for j in self._J}
         self._local_strats = local_strats # will be used in observe_utility
@@ -52,7 +52,7 @@ class CounterFactualRegret:
         # TODO: Implement V computation
         # Note that V has a non-zero value only at non-terminal nodes.
         # So we can just store V in l.
-        for node in reversed(self.nodes):
+        for node in reversed(self._nodes):
             if node in self._J:
                 # l[node] = 
                 pass
@@ -71,7 +71,7 @@ class CounterFactualRegret:
         """Compute the average strategy x_bar. Only called at the end of training.
 
         Returns:
-            x_bar: Sigma -> [0, 1] ('sequence-form' representation)
+            x_bar: Sigma -> [0, 1] (sequence-form)
         """
         local_average = {
             j: self._rms[j].average_strategy() for j in self._J
@@ -95,39 +95,28 @@ class CounterFactualRegretTrainer:
         """
 
         Args:
-            efg: extensive-form game in EFG format.
-                e.g., {
-                        "": {
-                            "type": "CHANCE",
-                            "outcomes": [("KQ", "KQ", 1/6), ...], # (outcome, next_node, probability)
-                        },
-                        "KQ": {
-                            "type": "DECISION",
-                            "player": 0,
-                            "information_set": "K",
-                            "actions": [("check", "KQ|check"), ("bet", "KQ|bet")], # (action, next_node)
-                        },
-                        ...
-                        "KQ|check-bet-call": {
-                            "type": "TERMINAL",
-                            "utility": [2, -2], # utility for player 0 and player 1
-                        }
-                    }
+            efg: dict
+                EFG representation of the game. Used for utility computation.
+            tfsdp0: dict
+                TFSDP representation for player 0. Used for CFRM training.
+            tfsdp1: dict
+                TFSDP representation for player 1. Used for CFRM training.
         """
-        self.efg = efg
-        self.tfsdp0 = tfsdp0
-        self.tfsdp1 = tfsdp1
-        self.cfr0 = CounterFactualRegret(**self.tfsdp0)
-        self.cfr1 = CounterFactualRegret(**self.tfsdp1)
+        self._efg = efg
+        self._tfsdp0 = tfsdp0
+        self._tfsdp1 = tfsdp1
+
+        self._cfr0 = CounterFactualRegret(self._tfsdp0)
+        self._cfr1 = CounterFactualRegret(self._tfsdp1)
         
 
-    def compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
+    def _compute_utility(self, x0: dict, x1: dict) -> tuple[dict, dict]:
         """
         Use EFG to compute utility for each player given their strategies.
 
         Args:
-            x0: Sigma -> [0, 1], strategy of player 0 in sequence-form representation.
-            x1: Sigma -> [0, 1], strategy of player 1 in sequence-form representation.
+            x0: Sigma -> [0, 1], strategy of player 0. (sequence-form)
+            x1: Sigma -> [0, 1], strategy of player 1. (sequence-form)
 
         Returns:
             l0: Sigma -> R, utility for player 0 for each sequence.
@@ -143,19 +132,19 @@ class CounterFactualRegretTrainer:
         """Train CFRM for T iterations and return the average strategy.
         
         Returns:
-            x_bar_0: Sigma -> [0, 1], final trained strategy of player 0. ('sequence-form' representation)
-            x_bar_1: Sigma -> [0, 1], final trained strategy of player 1. ('sequence-form' representation)
+            x_bar_0: Sigma -> [0, 1], final trained strategy of player 0. (sequence-form)
+            x_bar_1: Sigma -> [0, 1], final trained strategy of player 1. (sequence-form)
         """
         for t in range(T):
-            x0 = self.cfr0.next_strategy()
-            x1 = self.cfr1.next_strategy()
+            x0 = self._cfr0.next_strategy()
+            x1 = self._cfr1.next_strategy()
 
-            l0, l1 = self.compute_utility(x0, x1)
+            l0, l1 = self._compute_utility(x0, x1)
 
-            self.cfr0.observe_utility(l0)
-            self.cfr1.observe_utility(l1)
+            self._cfr0.observe_utility(l0)
+            self._cfr1.observe_utility(l1)
 
-        x_bar_0 = self.cfr0.average_strategy()
-        x_bar_1 = self.cfr1.average_strategy()
+        x_bar_0 = self._cfr0.average_strategy()
+        x_bar_1 = self._cfr1.average_strategy()
         return x_bar_0, x_bar_1
 
