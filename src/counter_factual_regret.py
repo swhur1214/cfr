@@ -9,11 +9,13 @@ except ModuleNotFoundError:
 
 
 class CounterFactualRegret:
-    def __init__(self, tfsdp: dict):
+    def __init__(self, tfsdp: dict, plus: bool = False):
         """Initialize CFR from a TFSDP description.
 
         Args:
             tfsdp: dict
+            plus: bool
+                Whether to use regret matching+ (RM+) or vanilla regret matching (RM).
         """
         self._J = tfsdp["J"]
         self._A = tfsdp["A"]
@@ -27,7 +29,7 @@ class CounterFactualRegret:
         self._K_set = set(self._K)
         self._nodes = self._topological_order()
 
-        self._rms = {j: RegretMatching(len(self._A[j])) for j in self._J}
+        self._rms = {j: RegretMatching(len(self._A[j]), plus=plus) for j in self._J}
         self._local_strats = {j: None for j in self._J}
 
     def _topological_order(self) -> list:
@@ -129,7 +131,7 @@ class CounterFactualRegretTrainer:
     One CFRM object for each player.
     """
 
-    def __init__(self, efg: dict, tfsdp0: dict, tfsdp1: dict):
+    def __init__(self, efg: dict, tfsdp0: dict, tfsdp1: dict, plus: bool = False):
         """
 
         Args:
@@ -139,13 +141,15 @@ class CounterFactualRegretTrainer:
                 TFSDP representation for player 0. Used for CFRM training.
             tfsdp1: dict
                 TFSDP representation for player 1. Used for CFRM training.
+            plus: bool
+                Whether to use regret matching+ (RM+) or vanilla regret matching (RM).
         """
         self._efg = efg
         self._tfsdp0 = tfsdp0
         self._tfsdp1 = tfsdp1
 
-        self._cfr0 = CounterFactualRegret(self._tfsdp0)
-        self._cfr1 = CounterFactualRegret(self._tfsdp1)
+        self._cfr0 = CounterFactualRegret(self._tfsdp0, plus)
+        self._cfr1 = CounterFactualRegret(self._tfsdp1, plus)
 
     def _traverse_tree(
         self,
