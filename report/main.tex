@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{microtype}
 \usepackage{float}
+\usepackage{url}
 
 \title{Study Report on Regret Matching and Counterfactual Regret Minimization}
 \author{}
@@ -23,19 +24,19 @@ This report summarizes my study of extensive-form games (EFGs), tree-form sequen
 
 \subsection{EFGs and TFSDPs}
 
-An extensive-form game (EFG) describes a sequential game as a tree. Histories correspond to nodes in the tree, terminal histories carry utilities, and each non-terminal history belongs either to chance or to one of the players. Information sets encode imperfect information: if two histories belong to the same information set of player $i$, then player $i$ cannot distinguish them when choosing an action. In two-player zero-sum games, the objective is to find a strategy profile close to a Nash equilibrium.
+An \textbf{extensive-form game (EFG)} describes a sequential game as a tree. Histories correspond to nodes in the tree, terminal histories carry utilities, and each non-terminal history belongs either to chance or to one of the players. Information sets encode imperfect information: if two histories belong to the same information set of player $i$, then player $i$ cannot distinguish them when choosing an action. In two-player zero-sum games, the objective is to find a strategy profile close to a Nash equilibrium.
 
-A TFSDP is a player-centric representation of sequential decision making. Instead of storing the full game tree at once, it describes a single player's local structure using observation points, decision points, signals, actions, and transition maps. In the implementation used for this project, a TFSDP is represented by
+A \textbf{tree-form sequential decision process (TFSDP)} is a player-centric representation of sequential decision making. Instead of storing the full game tree at once, it describes a single player's local structure using observation points, decision points, signals, actions, and transition maps. In the implementation used for this project, a TFSDP is represented by
 \[
 (J, A, K, S, \rho, \Sigma, p),
 \]
-where $J$ is the set of decision points, $A_j$ is the action set at $j \in J$, $K$ is the set of observation points, $S_k$ is the signal set at $k \in K$, $\rho$ is the transition map, $\Sigma$ is the set of sequences, and $p_j$ denotes the parent sequence of decision point $j$. This is a convenient representation for sequence-form strategies and for implementing CFR as a collection of local regret minimizers.
+where $J$ is the set of decision points, $A_j$ is the action set at $j \in J$, $K$ is the set of observation points, $S_k$ is the signal set at $k \in K$, $\rho$ is the transition map, $\Sigma$ is the set of sequences, and $p_j$ denotes the parent sequence of decision point $j$. Strictly speaking, $\Sigma$ and $p_j$ can be constructed from the other components, so they are included here mainly for convenience. In practice it is useful to store them explicitly because sequence-form strategy construction and CFR updates refer to them repeatedly.
 
-One modeling detail that was initially confusing is that the same strategic game can have multiple equivalent EFG or TFSDP representations. For example, in Kuhn Poker the chance move that deals cards can be modeled either as two successive deals (first to player 1, then to player 2) or as a single chance node with six possible card pairs. These trees are not syntactically identical, but they represent the same strategic situation. This explains why different lecture notes or code bases sometimes present slightly different trees even when they are solving the same game.
+One modeling detail that was initially confusing is that the same strategic game can have multiple equivalent EFG or TFSDP representations. For example, in player 1's TFSDP for Kuhn Poker, consider the branch in which player 1 is dealt $Q$, checks, and then the opponent also checks so that the game ends at showdown. One representation can end immediately at a terminal node with a variable utility equal to the expected payoff against the opponent's hidden card, which depends on the probability that the opponent had opened with $K$ or $J$. Another representation can insert one more observation node, reveal either signal $K$ or $J$, and then move to two different terminal nodes with fixed utilities $-1$ and $+1$. These TFSDPs are structurally different but strategically equivalent, and the core idea of CFR is unchanged under either representation.
 
 \subsection{Regret Matching}
 
-Regret Matching (RM) is one of the simplest no-regret procedures. Suppose a player repeatedly chooses a mixed action $x^t \in \Delta(A)$ and then observes a utility vector $\ell^t \in \mathbb{R}^{|A|}$. The cumulative regret for action $a$ after $T$ rounds is
+\textbf{Regret Matching (RM)} is one of the simplest no-regret procedures. Suppose a player repeatedly chooses a mixed action $x^t \in \Delta^{|A|}$ and then observes a utility vector $\ell^t \in \mathbb{R}^{|A|}$. The cumulative regret for action $a$ after $T$ rounds is
 \[
 R^T(a) = \sum_{t=1}^{T} \left(\ell^t(a) - \langle x^t, \ell^t \rangle\right).
 \]
@@ -49,15 +50,15 @@ x^{T+1}(a) =
 \]
 where $[r]_+ = \max\{r, 0\}$.
 
-The algorithm is remarkably simple: maintain cumulative regrets, keep only the positive part, normalize, and repeat. Regret Matching+ (RM+) modifies the update by truncating cumulative regrets at zero after every iteration. Although I omit the proof, the important practical point is that such a small change often improves convergence substantially.
+The algorithm is remarkably simple: maintain cumulative regrets, keep only the positive part, normalize, and repeat. Regret Matching+ (RM+) modifies the update by truncating cumulative regrets at zero after every iteration. In repeated two-player zero-sum play, the average strategies induced by RM converge to a Nash equilibrium. A classical proof of this fact is obtained through \textbf{Blackwell's approachability theorem}.
 
 \subsection{CFR and the Regret-Circuit Intuition}
 
-Counterfactual Regret Minimization (CFR) extends the same idea to imperfect-information games. The original algorithm was introduced by Zinkevich et al.\ \cite{zinkevich2007}. Rather than minimizing regret over the entire normal-form strategy space directly, CFR decomposes the problem across information sets. Each information set is assigned a local regret minimizer, typically RM or RM+, and these local modules are wired together through the game tree.
+\textbf{Counterfactual Regret Minimization (CFR)} extends the same idea to imperfect-information games. The original algorithm was introduced by Zinkevich et al.\ \cite{zinkevich2007}. Rather than minimizing regret over the entire normal-form strategy space directly, CFR decomposes the problem across information sets. Each information set is assigned a local regret minimizer, typically RM or RM+, and these local modules are wired together through the game tree.
 
-This is exactly the viewpoint emphasized by regret circuits \cite{farina2019}. Each local module receives a linear utility vector computed from the rest of the tree, updates its own regrets, and outputs a behavioral strategy for that information set. The global strategy is then the composition of all these local decisions. Intuitively, CFR works because the counterfactual utility isolates the effect of a player's choice at a given information set while weighting the path to that information set only by the opponents' and chance's reach probabilities.
+This is exactly the viewpoint emphasized by regret circuits \cite{farina2019}. Each local module receives a linear utility vector computed from the rest of the tree, updates its own regrets, and outputs a behavioral strategy for that information set. The global strategy is then the composition of all these local decisions.
 
-For player $i$, strategy profile $\sigma$, and information set $I$, the counterfactual value can be written as
+For player $i$, strategy profile $\sigma$, and information set $I$, the \textbf{counterfactual utility} can be written as
 \[
 u_i(\sigma, I)
 =
@@ -69,30 +70,60 @@ u_i(\sigma, I)
 \pi^\sigma_{-i}(I)
 }.
 \]
-The instantaneous counterfactual regret for action $a \in A(I)$ is the difference between the counterfactual value of deviating to $a$ at $I$ and the counterfactual value of following the current strategy at $I$. CFR accumulates these local regrets over time and applies regret matching independently at each information set. In two-player zero-sum games, the average strategy converges to equilibrium.
+This is the quantity referred to in \cite{zinkevich2007} as ``the expected utility given that information set $I$ is reached and all players play using strategy $\sigma$ except that player $i$ plays to reach $I$.'' The precise reason this formula has that meaning is discussed in the next section.
+
+The instantaneous counterfactual regret for action $a \in A(I)$ is the difference between the counterfactual utility of deviating to $a$ at $I$ and the counterfactual utility of following the current strategy at $I$. CFR accumulates these local regrets over time and applies regret matching independently at each information set. In two-player zero-sum games, the average strategy converges to equilibrium.
+
+\section{Clarifications and Implementation Details}
+
+This section collects points that were not fully clear to me from the paper or lecture notes alone, and that became clearer only after working through the notation and the implementation details.
 
 \subsection{A Notation Subtlety About Reach Probabilities}
 
-One point that caused confusion while reading \cite{zinkevich2007} was the notation for the reach probability of an information set. The paper defines
+One point that caused confusion while reading \cite{zinkevich2007} was the notation for \textbf{reach probabilities}. For a history $h$, let $\pi^\sigma(h)$ denote the probability that $h$ is reached under strategy profile $\sigma$. This can be decomposed into player $i$'s contribution and the contribution of everyone else (including chance):
 \[
-\pi^\sigma(I) = \sum_{h \in I} \pi^\sigma(h),
+\pi^\sigma(h) = \pi_i^\sigma(h)\pi_{-i}^\sigma(h).
 \]
-and then states that $\pi_i^\sigma(I)$ and $\pi_{-i}^\sigma(I)$ are defined similarly. If one reads this too literally, it is tempting to write
-\[
-\pi_i^\sigma(I) = \sum_{h \in I} \pi_i^\sigma(h),
-\]
-but this is not the intended object.
+Here $\pi_i^\sigma(h)$ is the probability that, at every prefix of $h$ where player $i$ acts, player $i$ chooses the action specified by $h$, and $\pi_{-i}^\sigma(h)$ is the product of the corresponding contributions from the opponents and chance. At the history level, this factorization is completely natural.
 
-For any information set $I$ of player $i$, perfect recall implies that $\pi_i^\sigma(h)$ is identical for every history $h \in I$. Therefore the natural interpretation is
+At the information-set level, one would also like the analogous identity
+\[
+\pi^\sigma(I) = \pi_i^\sigma(I)\pi_{-i}^\sigma(I),
+\qquad
+\pi^\sigma(I) = \sum_{h \in I} \pi^\sigma(h).
+\]
+The problem is that this identity fails if one interprets the paper too literally and defines
+\[
+\pi_i^\sigma(I) = \sum_{h \in I} \pi_i^\sigma(h).
+\]
+Indeed, if $I$ is an information set of player $i$, then perfect recall implies that $\pi_i^\sigma(h)$ is the same for every $h \in I$. Let this common value be $c$. Then
+\[
+\pi^\sigma(I)
+=
+\sum_{h \in I} \pi_i^\sigma(h)\pi_{-i}^\sigma(h)
+=
+c\sum_{h \in I}\pi_{-i}^\sigma(h),
+\]
+whereas the naive definition gives
+\[
+\pi_i^\sigma(I)\pi_{-i}^\sigma(I)
+=
+\left(\sum_{h \in I}\pi_i^\sigma(h)\right)\left(\sum_{h \in I}\pi_{-i}^\sigma(h)\right)
+=
+|I|\,c\sum_{h \in I}\pi_{-i}^\sigma(h),
+\]
+which is not equal to $\pi^\sigma(I)$ unless $|I| = 1$.
+
+The consistent interpretation is therefore
 \[
 \pi_i^\sigma(I) = \pi_i^\sigma(h)
 \qquad \text{for any } h \in I,
 \]
-while
+and
 \[
 \pi_{-i}^\sigma(I) = \sum_{h \in I} \pi_{-i}^\sigma(h).
 \]
-With this interpretation,
+With this definition,
 \[
 \pi^\sigma(I)
 =
@@ -102,15 +133,67 @@ With this interpretation,
 =
 \pi_i^\sigma(I)\pi_{-i}^\sigma(I).
 \]
-This factorization is exactly what makes the counterfactual-value formula natural: the player's own reach to $I$ is constant across the histories in $I$, so it cancels, leaving only the opponents' and chance's contribution in the weighting. In hindsight the idea is simple, but it is easy to misread the notation when first encountering CFR.
+This is the definition that matches the history-level factorization and makes the later counterfactual-utility formula work.
+
+This interpretation also explains why the verbal definition of counterfactual utility matches the formula used in \cite{zinkevich2007}. If we start from the conditional-expectation view
+\[
+u_i(\sigma, I)
+=
+\frac{
+\sum\limits_{h \in I}
+\sum\limits_{z \in Z: h \sqsubset z}
+\pi^\sigma(h)\,\pi^\sigma(h, z)\,u_i(z)
+}{
+\sum\limits_{h \in I} \pi^\sigma(h)
+},
+\]
+and then factor $\pi^\sigma(h) = \pi_i^\sigma(h)\pi_{-i}^\sigma(h)$, we obtain
+\[
+u_i(\sigma, I)
+=
+\frac{
+\sum\limits_{h \in I}
+\sum\limits_{z \in Z: h \sqsubset z}
+\pi_i^\sigma(h)\pi_{-i}^\sigma(h)\pi^\sigma(h, z)u_i(z)
+}{
+\sum\limits_{h \in I} \pi_i^\sigma(h)\pi_{-i}^\sigma(h)
+}.
+\]
+Since $\pi_i^\sigma(h)$ is the same for all $h \in I$, it can be pulled out of both the numerator and denominator and canceled. Therefore
+\[
+u_i(\sigma, I)
+=
+\frac{
+\sum\limits_{h \in I}
+\sum\limits_{z \in Z: h \sqsubset z}
+\pi_{-i}^\sigma(h)\pi^\sigma(h, z)u_i(z)
+}{
+\sum\limits_{h \in I} \pi_{-i}^\sigma(h)
+}
+=
+\frac{
+\sum\limits_{h \in I}
+\sum\limits_{z \in Z: h \sqsubset z}
+\pi_{-i}^\sigma(h)\pi^\sigma(h, z)u_i(z)
+}{
+\pi_{-i}^\sigma(I)
+},
+\]
+which is exactly the standard counterfactual-utility expression. This cancellation is the precise reason the notation for $\pi_i^\sigma(I)$ must be handled carefully.
+
+\subsection{Implementation Details}
+
+Several practical difficulties arose when translating the CFR pseudocode into an implementation. Even with the fairly explicit description of CFR in Farina's Lecture 5 \cite{farina2021}, the implementation was not immediate. First, the linear utility vector $\ell^t$ passed to the local regret minimizers is not given directly by an EFG representation; it has to be constructed by traversing the tree and correctly incorporating the opponent's reach probabilities. Second, the role of the auxiliary quantity $V^t$ in the bottom-up dynamic program is not obvious from the pseudocode alone. In the implementation, the most useful interpretation was that $V^t[v]$ represents the value of node $v$ with the relevant reach-probability factor already folded in. Since $\ell^t$ is induced directly only from terminal utilities, the purpose of the bottom-up dynamic program is to propagate these weighted values upward and fill in the corresponding values for all internal nodes.
 
 \section{Experiments}
+
+All algorithms and experiments in this report were implemented in Python. The source code and notebooks are available at \url{https://github.com/swhur1214/cfr}.
 
 \subsection{Notebook 1: RM on Rock-Paper-Scissors}
 
 The first experiment applies RM and RM+ to Rock-Paper-Scissors (RPS), a two-player zero-sum matrix game with a unique mixed Nash equilibrium at the uniform strategy. Since a uniform initial strategy is already an equilibrium, starting from zero regret would make the algorithm remain there immediately. To obtain a more informative learning curve, I initialized the cumulative regrets with non-uniform values and then ran self-play for $10{,}000$ iterations.
 
-Exploitability was measured as $\text{NashConv}/2$. The final results were:
+\textbf{Exploitability} was measured as $\text{NashConv}/2$. The final results were:
 \begin{center}
 \begin{tabular}{lccc}
 \toprule
@@ -147,7 +230,7 @@ CFR+ & $-0.055546$ & $0.00130270$ \\
 \end{tabular}
 \end{center}
 
-Both algorithms converged to strategies with very small exploitability, and CFR+ again converged faster than the vanilla version. The learned game value is also extremely close to the known value of Kuhn Poker, $-1/18 \approx -0.055556$, which provides a useful sanity check on the implementation. Qualitatively, the learned strategies also match the standard structure of the equilibrium: bluffing with the weakest card at a moderate frequency, betting aggressively with the strongest card, and mixing in the middle with the queen in response situations.
+Both algorithms converged to strategies with very small exploitability, and CFR+ again converged faster than the vanilla version. The curves also showed oscillatory behavior rather than a perfectly monotone decrease, similar to the RPS experiment. The learned game value is also extremely close to the known value of Kuhn Poker, $-1/18 \approx -0.055556$, which provides a useful sanity check on the implementation. Qualitatively, the learned strategies also match the standard structure of the equilibrium: bluffing with the weakest card at a moderate frequency, betting aggressively with the strongest card, and mixing in the middle with the queen in response situations.
 
 \begin{figure}[H]
 \centering
@@ -158,9 +241,9 @@ Both algorithms converged to strategies with very small exploitability, and CFR+
 
 \section{Conclusion}
 
-This project helped clarify two complementary ideas. First, RM is an extremely simple regret minimizer, yet it already finds optimal mixed strategies in repeated zero-sum play. Second, CFR can be understood as wiring together many such local regret minimizers over an imperfect-information game tree. That viewpoint makes the algorithm feel much less mysterious than it first appears in the original paper.
+This project helped clarify two complementary ideas. First, RM is an extremely simple regret minimizer, yet it already finds optimal mixed strategies in repeated zero-sum play. Second, CFR can be understood as wiring together many such local regret minimizers over an imperfect-information game tree. That viewpoint makes the algorithm feel much less mysterious than it first appears in the original paper. Implementing the algorithm, rather than only reading the paper and lecture notes, was especially instructive because it forced me to resolve several gaps between the abstract pseudocode and an actual EFG-based implementation.
 
-The most useful conceptual takeaway for me was that both notation and representation matter. The same game may be written as different but equivalent EFGs or TFSDPs, and the notation for reach probabilities at an information set must be interpreted carefully. Once those points are clear, the overall logic of CFR becomes much easier to follow.
+From the experimental side, both RM-type and CFR-type methods showed oscillatory learning curves, suggesting that a method for reducing this oscillation could improve convergence speed in practice.
 
 A natural next step is to study Monte Carlo CFR (MCCFR) and abstraction methods such as bucketing. These techniques are widely regarded as essential for scaling from toy games such as Kuhn Poker to realistic poker variants.
 
