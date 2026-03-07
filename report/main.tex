@@ -17,7 +17,7 @@
 \maketitle
 
 \begin{abstract}
-This report summarizes my study of extensive-form games (EFGs), tree-form sequential decision processes (TFSDPs), regret matching (RM), and counterfactual regret minimization (CFR). I also report two small experiments: RM/RM+ on Rock-Paper-Scissors and CFR/CFR+ on Kuhn Poker. The main goal was not only to implement the algorithms, but also to clarify several notation and modeling details that were initially confusing when reading different sources.
+This report summarizes my study of extensive-form games (EFGs), tree-form sequential decision processes (TFSDPs), regret matching (RM), and counterfactual regret minimization (CFR). I also report two small experiments: RM/RM+ on Rock-Paper-Scissors and CFR/CFR+ on Kuhn Poker \cite{wikipediaKuhnPoker}. The main goal was not only to implement the algorithms, but also to clarify several notation and modeling details that were initially confusing when reading different sources.
 \end{abstract}
 
 \section{Introduction}
@@ -253,15 +253,11 @@ A natural next step is to study Monte Carlo CFR (MCCFR) and abstraction methods 
 
 \begin{thebibliography}{9}
 
-\bibitem{blum2026}
-Avrim Blum.
-\newblock \emph{Algorithmic Game Theory (TTIC 31260), Lectures 1--3}.
-\newblock 2026.
-
-\bibitem{farina2021}
-Gabriele Farina.
-\newblock \emph{Computational Game Solving (CMU 15-888), Lectures 1--5}.
-\newblock 2021.
+\bibitem{wikipediaKuhnPoker}
+\emph{Kuhn poker}.
+\newblock Wikipedia.
+\newblock \url{https://en.wikipedia.org/wiki/Kuhn_poker}.
+\newblock Accessed March 7, 2026.
 
 \bibitem{zinkevich2007}
 Martin Zinkevich, Michael Johanson, Michael Bowling, and Carmelo Piccione.
@@ -272,6 +268,11 @@ Martin Zinkevich, Michael Johanson, Michael Bowling, and Carmelo Piccione.
 Gabriele Farina, Christian Kroer, and Tuomas Sandholm.
 \newblock Regret circuits: Composability of regret minimizers.
 \newblock In \emph{Proceedings of the 36th International Conference on Machine Learning}, 2019.
+
+\bibitem{farina2021}
+Gabriele Farina.
+\newblock \emph{Computational Game Solving (CMU 15-888), Lectures 1--5}.
+\newblock 2021.
 
 \end{thebibliography}
 

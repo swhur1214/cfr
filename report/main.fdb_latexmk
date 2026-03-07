@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1772923686.25008 "/home/swhur/cfr/report/main.tex" "main.pdf" "main" 1772923686.67427 0
+["pdflatex"] 1772925101.33084 "/home/swhur/cfr/report/main.tex" "main.pdf" "main" 1772925101.74305 0
   "/etc/texmf/web2c/texmf.cnf" 1771882586.29396 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/swhur/cfr/report/main.tex" 1772923685.48132 16626 1f9a9065ddb19201f9f876fdb55bba01 ""
+  "/home/swhur/cfr/report/main.tex" 1772925044.62907 16643 d448142d424ab99046572a18af409f52 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1246382020 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
@@ -84,8 +84,8 @@
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1771882635 8212030 70ca37980b05dfb7be11d0c42c626f9f ""
   "figures/kuhn_cfr_vs_cfrplus.png" 1772848248.00057 43663 b87773e54eefe38692b2e78c8c740359 ""
   "figures/rps_rm_vs_rmplus.png" 1772848248.00057 47645 55861f921300a6d798241e67e4ab1e07 ""
-  "main.aux" 1772923686.6373 1994 9cb6afa3ed36c290fc244f9386e56733 "pdflatex"
-  "main.tex" 1772923685.48132 16626 1f9a9065ddb19201f9f876fdb55bba01 ""
+  "main.aux" 1772925101.7011 2034 101b1891b5761c1f75991c8381b26f91 "pdflatex"
+  "main.tex" 1772925044.62907 16643 d448142d424ab99046572a18af409f52 ""
   (generated)
   "main.aux"
   "main.log"
