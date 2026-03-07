@@ -1,17 +1,15 @@
-# Counterfactual Regret Minimization (CFR) study & implementation
+# Study & implementation of Regret Matching (RM) and Counterfactual Regret (CFR) minimization algorithms.
 
-Algorithm
-- Regret Matching (RM)
-- Regret Matching+ (RM+)
-- Counterfactual Regret Minimization (CFR)
-- Counterfactual Regret Minimization+ (CFR+)
+## Core Algorithms
+- Regret Matching (RM) / Regret Matching+ (RM+)
+- Counterfactual Regret Minimization (CFR) / Counterfactual Regret Minimization+ (CFR+)
 
-Game
-- Rock Scissors Paper
-- Kuhn Poker
+## Notebooks
+- `01_rm_rock_paper_scissors.ipynb`: Run RM / RM+ on Rock-Paper-Scissors and see the learning curve.
+- `02_cfr_kuhn_poker.ipynb`: Run CFR / CFR+ on Kuhn Poker and see the learning curve.
 
-References
-- Farina, G. Computational Game Solving (CMU 15-888) Lecture Notes, Lectures 1–5, 2021.
+## References
+- Blum, A. Algorithmic Game Theory (TTIC 31260) Lectures 1–3, 2026. https://home.ttic.edu/~avrim/AGT26/
+- Farina, G. Computational Game Solving (CMU 15-888) Lectures 1–5, 2021. https://www.cs.cmu.edu/~sandholm/cs15-888F21/
 - Zinkevich, M., Johanson, M., Bowling, M., Piccione, C. “Regret Minimization in Games with Incomplete Information.” NeurIPS 2007, 2007.
 - Farina, G., Kroer, C., Sandholm, T. “Regret Circuits: Composability of Regret Minimizers.” ICML 2019, 2019.
-- Zhang, X. “Learn AI Game Playing Algorithm Part III — Counterfactual Regret Minimization.” Medium, 2020. https://xyzml.medium.com/learn-ai-game-playing-algorithm-part-iii-counterfactual-regret-minimization-b182a7ec85fb
