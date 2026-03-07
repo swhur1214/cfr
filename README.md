@@ -8,6 +8,9 @@
 - `01_rm_rock_paper_scissors.ipynb`: Run RM / RM+ on Rock-Paper-Scissors and see the learning curve.
 - `02_cfr_kuhn_poker.ipynb`: Run CFR / CFR+ on Kuhn Poker and see the learning curve.
 
+## Report
+- [Project report (PDF)](report/main.pdf)
+
 ## References
 - [Blum, A. Algorithmic Game Theory (TTIC 31260) Lectures 1–3, 2026.](https://home.ttic.edu/~avrim/AGT26/)
 - [Farina, G. Computational Game Solving (CMU 15-888) Lectures 1–5, 2021.](https://www.cs.cmu.edu/~sandholm/cs15-888F21/)
