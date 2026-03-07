@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.2.23)  6 MAR 2026 21:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.2.23)  7 MAR 2026 16:01
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -370,16 +370,16 @@ Package microtype Info: Loading generic protrusion settings for font family
 <figures/rps_rm_vs_rmplus.png, id=29, 507.3354pt x 339.669pt>
 File: figures/rps_rm_vs_rmplus.png Graphic file (type png)
 <use figures/rps_rm_vs_rmplus.png>
-Package pdftex.def Info: figures/rps_rm_vs_rmplus.png  used on input line 212.
+Package pdftex.def Info: figures/rps_rm_vs_rmplus.png  used on input line 216.
 (pdftex.def)             Requested size: 385.20255pt x 257.90752pt.
-<figures/kuhn_cfr_vs_cfrplus.png, id=31, 507.3354pt x 339.669pt>
+ [5 <./figures/rps_rm_vs_rmplus.png>]
+<figures/kuhn_cfr_vs_cfrplus.png, id=35, 507.3354pt x 339.669pt>
 File: figures/kuhn_cfr_vs_cfrplus.png Graphic file (type png)
 <use figures/kuhn_cfr_vs_cfrplus.png>
-Package pdftex.def Info: figures/kuhn_cfr_vs_cfrplus.png  used on input line 23
-7.
+Package pdftex.def Info: figures/kuhn_cfr_vs_cfrplus.png  used on input line 24
+1.
 (pdftex.def)             Requested size: 385.20255pt x 257.90752pt.
- [5 <./figures/rps_rm_vs_rmplus.png>] [6 <./figures/kuhn_cfr_vs_cfrplus.png>] [
-7] (./main.aux)
+ [6 <./figures/kuhn_cfr_vs_cfrplus.png>] [7] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -388,7 +388,7 @@ L3 programming layer <2024-01-22>
 Here is how much of TeX's memory you used:
  6345 strings out of 474222
  98413 string characters out of 5748733
- 1934975 words of memory out of 5000000
+ 1933975 words of memory out of 5000000
  28431 multiletter control sequences out of 15000+600000
  569765 words of font info for 124 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -407,7 +407,7 @@ sy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pf
 b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr
 /share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on main.pdf (7 pages, 268900 bytes).
+Output written on main.pdf (7 pages, 269250 bytes).
 PDF statistics:
  108 PDF objects out of 1000 (max. 8388607)
  64 compressed objects within 1 object stream

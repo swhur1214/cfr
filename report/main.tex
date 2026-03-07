@@ -86,15 +86,19 @@ One point that caused confusion while reading \cite{zinkevich2007} was the notat
 \]
 Here $\pi_i^\sigma(h)$ is the probability that, at every prefix of $h$ where player $i$ acts, player $i$ chooses the action specified by $h$, and $\pi_{-i}^\sigma(h)$ is the product of the corresponding contributions from the opponents and chance. At the history level, this factorization is completely natural.
 
-At the information-set level, one would also like the analogous identity
+For an information set $I$, \cite{zinkevich2007} defines
 \[
-\pi^\sigma(I) = \pi_i^\sigma(I)\pi_{-i}^\sigma(I),
-\qquad
-\pi^\sigma(I) = \sum_{h \in I} \pi^\sigma(h).
+\pi^\sigma(I) = \sum_{h \in I} \pi^\sigma(h),
 \]
-The problem is that this identity fails if one interprets the paper too literally and defines
+and then states that $\pi_i^\sigma(I)$ and $\pi_{-i}^\sigma(I)$ are ``defined similarly.'' This leaves the intended definitions ambiguous. A direct symmetric extension would be
 \[
-\pi_i^\sigma(I) = \sum_{h \in I} \pi_i^\sigma(h).
+\pi_i^\sigma(I) = \sum_{h \in I} \pi_i^\sigma(h),
+\qquad
+\pi_{-i}^\sigma(I) = \sum_{h \in I} \pi_{-i}^\sigma(h).
+\]
+However, these are not the correct definitions if one wants the information-set version of the history-level factorization
+\[
+\pi^\sigma(I) = \pi_i^\sigma(I)\pi_{-i}^\sigma(I).
 \]
 Indeed, if $I$ is an information set of player $i$, then perfect recall implies that $\pi_i^\sigma(h)$ is the same for every $h \in I$. Let this common value be $c$. Then
 \[
@@ -104,7 +108,7 @@ Indeed, if $I$ is an information set of player $i$, then perfect recall implies 
 =
 c\sum_{h \in I}\pi_{-i}^\sigma(h),
 \]
-whereas the naive definition gives
+whereas the symmetric extension gives
 \[
 \pi_i^\sigma(I)\pi_{-i}^\sigma(I)
 =
