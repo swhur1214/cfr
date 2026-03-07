@@ -32,7 +32,7 @@ A \textbf{tree-form sequential decision process (TFSDP)} is a player-centric rep
 \]
 where $J$ is the set of decision points, $A_j$ is the action set at $j \in J$, $K$ is the set of observation points, $S_k$ is the signal set at $k \in K$, $\rho$ is the transition map, $\Sigma$ is the set of sequences, and $p_j$ denotes the parent sequence of decision point $j$. Strictly speaking, $\Sigma$ and $p_j$ can be constructed from the other components, so they are included here mainly for convenience. In practice it is useful to store them explicitly because sequence-form strategy construction and CFR updates refer to them repeatedly.
 
-One modeling detail that was initially confusing is that the same strategic game can have multiple equivalent EFG or TFSDP representations. For example, in player 1's TFSDP for Kuhn Poker, consider the branch in which player 1 is dealt $Q$, checks, and then the opponent also checks so that the game ends at showdown. One representation can end immediately at a terminal node with a variable utility equal to the expected payoff against the opponent's hidden card, which depends on the probability that the opponent had opened with $K$ or $J$. Another representation can insert one more observation node, reveal either signal $K$ or $J$, and then move to two different terminal nodes with fixed utilities $-1$ and $+1$. These TFSDPs are structurally different but strategically equivalent, and the core idea of CFR is unchanged under either representation.
+One modeling detail that was initially confusing is that the same strategic game can have multiple equivalent EFG or TFSDP representations. For example, in player 1's TFSDP for Kuhn Poker, consider the branch in which player 1 is dealt $Q$, checks, and then the opponent also checks so that the game ends at showdown. One representation can end immediately at a terminal node with a variable utility equal to the expected payoff against the opponent's hidden card, which depends on the conditional probability that the opponent's hidden card is $K$ or $J$ given the public history. Another representation can insert one more observation node, reveal either signal $K$ or $J$, and then move to two different terminal nodes with fixed utilities $-1$ and $+1$. These TFSDPs are structurally different but strategically equivalent, and the core idea of CFR is unchanged under either representation.
 
 \subsection{Regret Matching}
 
@@ -118,7 +118,7 @@ whereas the symmetric extension gives
 \]
 which is not equal to $\pi^\sigma(I)$ unless $|I| = 1$.
 
-The consistent interpretation is therefore
+The interpretation consistent with perfect recall and the counterfactual-utility formula is therefore
 \[
 \pi_i^\sigma(I) = \pi_i^\sigma(h)
 \qquad \text{for any } h \in I,
@@ -209,7 +209,7 @@ RM+ & $(0.3320, 0.3328, 0.3352)$ & $(0.3348, 0.3338, 0.3314)$ & $0.00287796$ \\
 \end{tabular}
 \end{center}
 
-Empirically, both methods showed a convergence trend roughly consistent with $O(1/T)$, and RM+ converged faster, as expected. However, an interesting feature of both curves is that they oscillate rather than decrease monotonically. My interpretation is that this is related to the rotational dynamics of RPS: instantaneous play naturally cycles around the mixed equilibrium, and averaging only partially smooths this effect. This suggests that purely first-order regret updates may be slowed down by cyclic behavior, and it would be interesting to compare them with more predictive or higher-order updates in the future.
+Empirically, both methods showed a convergence trend roughly consistent with $O(1/\sqrt{T})$, and RM+ converged faster, as expected. However, an interesting feature of both curves is that they oscillate rather than decrease monotonically. My interpretation is that this is related to the rotational dynamics of RPS: instantaneous play naturally cycles around the mixed equilibrium, and averaging only partially smooths this effect. This suggests that purely first-order regret updates may be slowed down by cyclic behavior, and it would be interesting to compare them with more predictive or higher-order updates in the future.
 
 \begin{figure}[H]
 \centering
@@ -245,7 +245,7 @@ Both algorithms converged to strategies with very small exploitability, and CFR+
 
 \section{Conclusion}
 
-This project helped clarify two complementary ideas. First, RM is an extremely simple regret minimizer, yet it already finds optimal mixed strategies in repeated zero-sum play. Second, CFR can be understood as wiring together many such local regret minimizers over an imperfect-information game tree. That viewpoint makes the algorithm feel much less mysterious than it first appears in the original paper. Implementing the algorithm, rather than only reading the paper and lecture notes, was especially instructive because it forced me to resolve several gaps between the abstract pseudocode and an actual EFG-based implementation.
+This project helped clarify two complementary ideas. First, despite its simplicity, RM finds optimal mixed strategies. Second, CFR can be understood as wiring together many such local regret minimizers over an imperfect-information game tree. That viewpoint makes the algorithm substantially more transparent than it first appears in the original paper. Implementing the algorithm, rather than only reading the paper and lecture notes, was especially instructive because it forced me to resolve several gaps between the abstract pseudocode and an actual EFG-based implementation.
 
 From the experimental side, both RM-type and CFR-type methods showed oscillatory learning curves, suggesting that a method for reducing this oscillation could improve convergence speed in practice.
 
